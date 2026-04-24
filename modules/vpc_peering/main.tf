@@ -1,7 +1,25 @@
+terraform {
+  required_version = ">= 1.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
 resource "aws_vpc_peering_connection" "peer" {
   vpc_id      = var.support_vpc_id
   peer_vpc_id = var.cluster_vpc_id
   auto_accept = true
+
+  accepter {
+    allow_remote_vpc_dns_resolution = true
+  }
+
+  requester {
+    allow_remote_vpc_dns_resolution = true
+  }
 }
 
 resource "aws_route" "support_to_cluster" {

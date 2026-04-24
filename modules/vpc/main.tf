@@ -1,15 +1,25 @@
-locals {
-  mult = var.environment == "prod" ? 2 : 1
+terraform {
+  required_version = ">= 1.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
 }
+
+locals {
+  mult = var.subnet_multiplier
+}
+
+data "aws_caller_identity" "current" {}
+
+data "aws_region" "current" {}
 
 resource "aws_vpc" "cluster" {
   cidr_block           = var.cluster_vpc_cidr
   enable_dns_support   = true
   enable_dns_hostnames = true
-}
-
-resource "aws_internet_gateway" "igw" {
-  vpc_id = aws_vpc.cluster.id
 }
 
 resource "aws_subnet" "public" {
@@ -36,28 +46,16 @@ resource "aws_subnet" "db" {
   availability_zone = element(var.azs, count.index % length(var.azs))
 }
 
-resource "aws_eip" "nat" { count = length(var.azs) }
-
-resource "aws_nat_gateway" "nat" {
-  count         = length(var.azs)
-  allocation_id = aws_eip.nat[count.index].id
-  subnet_id     = aws_subnet.public[count.index].id
+resource "aws_internet_gateway" "igw" {
+  vpc_id = aws_vpc.cluster.id
 }
 
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.cluster.id
+
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.igw.id
-  }
-}
-
-resource "aws_route_table" "private" {
-  count  = length(var.azs)
-  vpc_id = aws_vpc.cluster.id
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.nat[count.index].id
   }
 }
 
@@ -67,10 +65,27 @@ resource "aws_route_table_association" "pub" {
   route_table_id = aws_route_table.public.id
 }
 
+resource "aws_route_table" "private" {
+  count  = length(var.azs)
+  vpc_id = aws_vpc.cluster.id
+}
+
 resource "aws_route_table_association" "priv" {
   count          = length(aws_subnet.private)
   subnet_id      = aws_subnet.private[count.index].id
   route_table_id = aws_route_table.private[count.index % length(var.azs)].id
+}
+
+resource "aws_cloudwatch_log_group" "cluster_flow" {
+  name              = "/aws/vpc/flowlogs/cluster-${var.environment}"
+  retention_in_days = 365
+}
+
+resource "aws_flow_log" "cluster" {
+  vpc_id               = aws_vpc.cluster.id
+  traffic_type         = "ALL"
+  log_destination_type = "cloud-watch-logs"
+  log_destination      = aws_cloudwatch_log_group.cluster_flow.arn
 }
 
 # Support VPC

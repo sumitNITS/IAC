@@ -14,7 +14,11 @@ variable "support_vpc_cidr" {
 }
 
 variable "azs" {
-  description = "List of availability zones in ap-south-1"
+  description = "List of availability zones"
   type        = list(string)
-  default     = ["ap-south-1a", "ap-south-1b", "ap-south-1c"]
+}
+
+variable "subnet_multiplier" {
+  description = "Multiplier for subnet counts per AZ"
+  type        = number
 }
