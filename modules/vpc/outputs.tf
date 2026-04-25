@@ -40,20 +40,20 @@ output "support_private_route_tables" {
 
 output "vpc_id" {
   description = "Cluster VPC ID"
-  value = aws_vpc.cluster.id
+  value       = aws_vpc.cluster.id
 }
 
 output "private_subnets" {
   description = "List of private subnet IDs in the cluster VPC"
-  value = aws_subnet.private[*].id
+  value       = aws_subnet.private[*].id
 }
 
 output "public_subnets" {
   description = "List of public subnet IDs in the cluster VPC"
-  value = aws_subnet.public[*].id
+  value       = aws_subnet.public[*].id
 }
 
 output "private_route_tables" {
   description = "List of private route table IDs in the cluster VPC"
-  value = aws_route_table.private[*].id
+  value       = aws_route_table.private[*].id
 }
