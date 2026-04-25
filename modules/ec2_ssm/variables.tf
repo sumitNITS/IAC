@@ -18,7 +18,17 @@ variable "cluster_vpc_cidr" {
   type        = string
 }
 
-variable "eks_node_sg" {
-  description = "EKS node security group ID"
+variable "support_vpc_cidr" {
+  description = "CIDR block of the support VPC"
+  type        = string
+}
+
+variable "instance_type" {
+  description = "EC2 instance type for the SSM jump host"
+  type        = string
+}
+
+variable "ami_name_pattern" {
+  description = "AMI name pattern for the SSM jump host"
   type        = string
 }

@@ -1,18 +1,91 @@
+terraform {
+  required_version = ">= 1.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
 resource "aws_security_group" "endpoint_sg" {
-  name   = "endpoint-sg"
-  vpc_id = var.vpc_id
+  name        = "${var.environment}-endpoint-sg"
+  description = "Security group for cluster VPC interface endpoints"
+  vpc_id      = var.vpc_id
+
   ingress {
+    description = "Allow HTTPS from cluster VPC"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
     cidr_blocks = [var.cluster_vpc_cidr]
   }
+
   egress {
+    description = "Allow all outbound to AWS services"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.cluster_vpc_cidr]
   }
+
+  tags = {
+    Name = "${var.environment}-endpoint-sg"
+  }
+}
+
+# Support VPC endpoints for SSM
+resource "aws_security_group" "support_endpoint_sg" {
+  name        = "${var.environment}-support-endpoint-sg"
+  description = "Security group for support VPC SSM interface endpoints"
+  vpc_id      = var.support_vpc_id
+
+  ingress {
+    description = "Allow HTTPS from support VPC"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = [var.support_vpc_cidr]
+  }
+
+  egress {
+    description = "Allow all outbound to AWS services"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = [var.support_vpc_cidr]
+  }
+
+  tags = {
+    Name = "${var.environment}-support-endpoint-sg"
+  }
+}
+
+resource "aws_vpc_endpoint" "ssm" {
+  vpc_id              = var.support_vpc_id
+  service_name        = "com.amazonaws.${var.region}.ssm"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = var.support_private_subnets
+  security_group_ids  = [aws_security_group.support_endpoint_sg.id]
+  private_dns_enabled = true
+}
+
+resource "aws_vpc_endpoint" "ssmmessages" {
+  vpc_id              = var.support_vpc_id
+  service_name        = "com.amazonaws.${var.region}.ssmmessages"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = var.support_private_subnets
+  security_group_ids  = [aws_security_group.support_endpoint_sg.id]
+  private_dns_enabled = true
+}
+
+resource "aws_vpc_endpoint" "ec2messages" {
+  vpc_id              = var.support_vpc_id
+  service_name        = "com.amazonaws.${var.region}.ec2messages"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = var.support_private_subnets
+  security_group_ids  = [aws_security_group.support_endpoint_sg.id]
+  private_dns_enabled = true
 }
 
 resource "aws_vpc_endpoint" "s3" {
@@ -22,34 +95,25 @@ resource "aws_vpc_endpoint" "s3" {
   route_table_ids   = var.private_route_tables
 }
 
-resource "aws_vpc_endpoint" "ecr_api" {
-  vpc_id             = var.vpc_id
-  service_name       = "com.amazonaws.${var.region}.ecr.api"
-  vpc_endpoint_type  = "Interface"
-  subnet_ids         = var.private_subnets
-  security_group_ids = [aws_security_group.endpoint_sg.id]
+locals {
+  interface_endpoints = [
+    "ecr.api",
+    "ecr.dkr",
+    "logs",
+    "sts",
+    "ec2",
+    "eks",
+    "elasticloadbalancing"
+  ]
 }
 
-resource "aws_vpc_endpoint" "ecr_dkr" {
-  vpc_id             = var.vpc_id
-  service_name       = "com.amazonaws.${var.region}.ecr.dkr"
-  vpc_endpoint_type  = "Interface"
-  subnet_ids         = var.private_subnets
-  security_group_ids = [aws_security_group.endpoint_sg.id]
-}
+resource "aws_vpc_endpoint" "interface" {
+  for_each = toset(local.interface_endpoints)
 
-resource "aws_vpc_endpoint" "sts" {
-  vpc_id             = var.vpc_id
-  service_name       = "com.amazonaws.${var.region}.sts"
-  vpc_endpoint_type  = "Interface"
-  subnet_ids         = var.private_subnets
-  security_group_ids = [aws_security_group.endpoint_sg.id]
-}
-
-resource "aws_vpc_endpoint" "logs" {
-  vpc_id             = var.vpc_id
-  service_name       = "com.amazonaws.${var.region}.logs"
-  vpc_endpoint_type  = "Interface"
-  subnet_ids         = var.private_subnets
-  security_group_ids = [aws_security_group.endpoint_sg.id]
+  vpc_id              = var.vpc_id
+  service_name        = "com.amazonaws.${var.region}.${each.key}"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = var.private_subnet_ids
+  security_group_ids  = [aws_security_group.endpoint_sg.id]
+  private_dns_enabled = true
 }

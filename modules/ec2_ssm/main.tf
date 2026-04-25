@@ -1,3 +1,13 @@
+terraform {
+  required_version = ">= 1.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
 resource "aws_iam_role" "ec2_ssm_role" {
   name = "${var.environment}-ec2-ssm-role"
   assume_role_policy = jsonencode({
@@ -17,8 +27,9 @@ resource "aws_iam_instance_profile" "profile" {
 }
 
 resource "aws_security_group" "sg" {
-  name   = "${var.environment}-ssm-sg"
-  vpc_id = var.vpc_id
+  name        = "${var.environment}-ssm-sg"
+  description = "Security group for SSM jump host - restricts egress to VPC CIDRs only"
+  vpc_id      = var.vpc_id
 
   # DNS resolution
   egress {
@@ -26,25 +37,16 @@ resource "aws_security_group" "sg" {
     from_port   = 53
     to_port     = 53
     protocol    = "udp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.support_vpc_cidr]
   }
 
-  # HTTPS to AWS services
+  # HTTPS to AWS endpoints and cluster services
   egress {
-    description = "Allow HTTPS to AWS"
+    description = "Allow HTTPS to AWS endpoints and cluster services"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # EKS API access
-  egress {
-    description     = "Allow EKS API access"
-    from_port       = 443
-    to_port         = 443
-    protocol        = "tcp"
-    security_groups = [var.eks_node_sg]
+    cidr_blocks = [var.support_vpc_cidr, var.cluster_vpc_cidr]
   }
 
   # RDS access
@@ -66,15 +68,37 @@ data "aws_ami" "al2023" {
   owners      = ["amazon"]
   filter {
     name   = "name"
-    values = ["al2023-ami-*-x86_64"]
+    values = [var.ami_name_pattern]
   }
 }
 
 resource "aws_instance" "ssm" {
   ami                         = data.aws_ami.al2023.id
-  instance_type               = "t3.micro"
+  instance_type               = var.instance_type
   subnet_id                   = var.subnet_ids[0]
   vpc_security_group_ids      = [aws_security_group.sg.id]
   iam_instance_profile        = aws_iam_instance_profile.profile.name
   associate_public_ip_address = false
+  ebs_optimized               = true
+  monitoring                  = true
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 1
+  }
+
+  root_block_device {
+    encrypted = true
+  }
+
+  user_data = <<-EOF
+    #!/bin/bash
+    systemctl enable amazon-ssm-agent
+    systemctl start amazon-ssm-agent
+  EOF
+
+  tags = {
+    Name = "${var.environment}-ssm-jump-host"
+  }
 }
