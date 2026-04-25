@@ -30,7 +30,7 @@ output "support_endpoint_security_group_id" {
 
 output "endpoint_ids" {
   description = "VPC endpoint IDs for S3 and ECR (interface endpoints)"
-  value = aws_vpc_endpoint.interface
+  value       = aws_vpc_endpoint.interface
 }
 
 output "endpoint_sg_id" {

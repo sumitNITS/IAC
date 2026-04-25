@@ -8,6 +8,11 @@ variable "cluster_name" {
   type        = string
 }
 
+variable "cluster_version" {
+  description = "Kubernetes version for the EKS cluster"
+  type        = string
+}
+
 variable "vpc_id" {
   description = "VPC ID for the EKS cluster"
   type        = string
@@ -19,7 +24,7 @@ variable "private_subnets" {
 }
 
 variable "endpoint_sg_id" {
-  description = "VPC endpoint security group ID for API access restriction"
+  description = "VPC endpoint security group ID for node egress"
   type        = string
 }
 
