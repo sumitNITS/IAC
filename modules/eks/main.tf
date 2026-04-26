@@ -66,8 +66,9 @@ module "cluster" {
   cluster_name    = local.cluster_name
   cluster_version = var.cluster_version
 
-  cluster_endpoint_private_access = true
-  cluster_endpoint_public_access  = false
+  cluster_endpoint_private_access          = true
+  cluster_endpoint_public_access           = false
+  enable_cluster_creator_admin_permissions = true
 
   vpc_id     = var.vpc_id
   subnet_ids = var.private_subnets
@@ -84,6 +85,21 @@ module "cluster" {
 
   # IRSA / OIDC
   enable_irsa = true
+
+  access_entries = {
+    jump_host_admin = {
+      principal_arn = var.jump_host_role_arn
+
+      policy_associations = {
+        admin = {
+          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+          access_scope = {
+            type = "cluster"
+          }
+        }
+      }
+    }
+  }
 
   # EKS Managed Add-ons
   cluster_addons = {
@@ -103,7 +119,7 @@ module "cluster" {
     default = {
       name           = "${var.environment}-ng"
       instance_types = var.node_instance_types
-      ami_type       = "AL2_x86_64"
+      ami_type       = "AL2023_x86_64_STANDARD"
       capacity_type  = "ON_DEMAND"
 
       desired_size = var.node_desired_size

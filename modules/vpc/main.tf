@@ -81,11 +81,47 @@ resource "aws_cloudwatch_log_group" "cluster_flow" {
   retention_in_days = 365
 }
 
+resource "aws_iam_role" "flow_log" {
+  name = "${var.environment}-vpc-flow-log-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Service = "vpc-flow-logs.amazonaws.com"
+      }
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "flow_log" {
+  name = "${var.environment}-vpc-flow-log-policy"
+  role = aws_iam_role.flow_log.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams"
+      ]
+      Resource = "*"
+    }]
+  })
+}
+
 resource "aws_flow_log" "cluster" {
   vpc_id               = aws_vpc.cluster.id
   traffic_type         = "ALL"
   log_destination_type = "cloud-watch-logs"
   log_destination      = aws_cloudwatch_log_group.cluster_flow.arn
+  iam_role_arn         = aws_iam_role.flow_log.arn
 }
 
 # Support VPC

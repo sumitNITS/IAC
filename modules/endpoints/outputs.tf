@@ -10,17 +10,17 @@ output "endpoint_security_group_id" {
 
 output "ssm_endpoint_id" {
   description = "ID of the SSM VPC endpoint in support VPC"
-  value       = aws_vpc_endpoint.ssm.id
+  value       = aws_vpc_endpoint.support_interface["ssm"].id
 }
 
 output "ssmmessages_endpoint_id" {
   description = "ID of the SSM Messages VPC endpoint in support VPC"
-  value       = aws_vpc_endpoint.ssmmessages.id
+  value       = aws_vpc_endpoint.support_interface["ssmmessages"].id
 }
 
 output "ec2messages_endpoint_id" {
   description = "ID of the EC2 Messages VPC endpoint in support VPC"
-  value       = aws_vpc_endpoint.ec2messages.id
+  value       = aws_vpc_endpoint.support_interface["ec2messages"].id
 }
 
 output "support_endpoint_security_group_id" {
@@ -28,25 +28,20 @@ output "support_endpoint_security_group_id" {
   value       = aws_security_group.support_endpoint_sg.id
 }
 
-output "endpoint_ids" {
-  description = "VPC endpoint IDs for S3 and ECR (interface endpoints)"
-  value       = aws_vpc_endpoint.interface
-}
-
 output "endpoint_sg_id" {
-  value = aws_security_group.endpoint_sg.id
+  description = "Compatibility alias for cluster endpoint security group ID"
+  value       = aws_security_group.endpoint_sg.id
 }
 
 output "interface_endpoint_ids" {
+  description = "Map of cluster VPC interface endpoint service names to endpoint IDs"
   value = {
     for k, v in aws_vpc_endpoint.interface :
     k => v.id
   }
 }
 
-output "interface_endpoints" {
-  value = {
-    for k, v in aws_vpc_endpoint.interface :
-    k => v.id
-  }
+output "support_s3_endpoint_id" {
+  description = "ID of the S3 VPC endpoint in support VPC"
+  value       = aws_vpc_endpoint.s3_support.id
 }

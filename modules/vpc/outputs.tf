@@ -4,7 +4,7 @@ output "cluster_vpc_id" {
 }
 
 output "cluster_public_subnets" {
-  description = "List of public subnet IDs in the cluster VPC (for ALB/NAT Gateway)"
+  description = "List of public subnet IDs in the cluster VPC (for internet-facing load balancers)"
   value       = aws_subnet.public[*].id
 }
 
@@ -19,7 +19,7 @@ output "cluster_db_subnets" {
 }
 
 output "cluster_private_route_tables" {
-  description = "List of private route table IDs in the cluster VPC for NAT routing"
+  description = "List of private route table IDs in the cluster VPC"
   value       = aws_route_table.private[*].id
 }
 
@@ -36,24 +36,4 @@ output "support_private_subnets" {
 output "support_private_route_tables" {
   description = "List of private route table IDs in the support VPC for peering routes"
   value       = aws_route_table.support_private[*].id
-}
-
-output "vpc_id" {
-  description = "Cluster VPC ID"
-  value       = aws_vpc.cluster.id
-}
-
-output "private_subnets" {
-  description = "List of private subnet IDs in the cluster VPC"
-  value       = aws_subnet.private[*].id
-}
-
-output "public_subnets" {
-  description = "List of public subnet IDs in the cluster VPC"
-  value       = aws_subnet.public[*].id
-}
-
-output "private_route_tables" {
-  description = "List of private route table IDs in the cluster VPC"
-  value       = aws_route_table.private[*].id
 }

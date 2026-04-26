@@ -12,3 +12,8 @@ output "security_group_id" {
   description = "Security group ID of the SSM instance"
   value       = aws_security_group.sg.id
 }
+
+output "role_arn" {
+  description = "IAM role ARN assumed by the SSM jump host instance profile"
+  value       = aws_iam_role.ec2_ssm_role.arn
+}

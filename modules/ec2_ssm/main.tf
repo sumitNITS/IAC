@@ -21,9 +21,75 @@ resource "aws_iam_role_policy_attachment" "ssm" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
+resource "aws_iam_role_policy" "eks_access" {
+  name = "${var.environment}-ec2-eks-access"
+  role = aws_iam_role.ec2_ssm_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "eks:DescribeCluster",
+        "eks:ListClusters"
+      ]
+      Resource = "*"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "s3_artifacts_read" {
+  count = var.s3_artifacts_bucket == null ? 0 : 1
+
+  name = "${var.environment}-ec2-s3-artifacts-read"
+  role = aws_iam_role.ec2_ssm_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      merge(
+        {
+          Sid    = "ListArtifactsBucket"
+          Effect = "Allow"
+          Action = [
+            "s3:ListBucket"
+          ]
+          Resource = "arn:aws:s3:::${var.s3_artifacts_bucket}"
+        },
+        var.s3_artifacts_prefix == null ? {} : {
+          Condition = {
+            StringLike = {
+              "s3:prefix" = [
+                var.s3_artifacts_prefix,
+                "${var.s3_artifacts_prefix}/*"
+              ]
+            }
+          }
+        }
+      ),
+      {
+        Sid    = "ReadArtifactsObjects"
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject"
+        ]
+        Resource = (
+          var.s3_artifacts_prefix == null
+          ? "arn:aws:s3:::${var.s3_artifacts_bucket}/*"
+          : "arn:aws:s3:::${var.s3_artifacts_bucket}/${var.s3_artifacts_prefix}/*"
+        )
+      }
+    ]
+  })
+}
+
 resource "aws_iam_instance_profile" "profile" {
   name = "${var.environment}-ec2-profile"
   role = aws_iam_role.ec2_ssm_role.name
+}
+
+data "aws_prefix_list" "s3" {
+  name = "com.amazonaws.${var.region}.s3"
 }
 
 resource "aws_security_group" "sg" {
@@ -63,6 +129,16 @@ resource "aws_security_group" "sg" {
   }
 }
 
+resource "aws_security_group_rule" "s3_https_egress" {
+  type              = "egress"
+  description       = "Allow HTTPS to S3 via Gateway endpoint"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  prefix_list_ids   = [data.aws_prefix_list.s3.id]
+  security_group_id = aws_security_group.sg.id
+}
+
 data "aws_ami" "al2023" {
   most_recent = true
   owners      = ["amazon"]
@@ -94,6 +170,7 @@ resource "aws_instance" "ssm" {
 
   user_data = <<-EOF
     #!/bin/bash
+    set -e
     systemctl enable amazon-ssm-agent
     systemctl start amazon-ssm-agent
   EOF
