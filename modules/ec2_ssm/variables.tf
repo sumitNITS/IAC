@@ -3,6 +3,12 @@ variable "environment" {
   type        = string
 }
 
+variable "region" {
+  description = "AWS region for prefix list lookups"
+  type        = string
+  default     = "ap-south-1"
+}
+
 variable "vpc_id" {
   description = "VPC ID where the SSM EC2 instance will be launched"
   type        = string
@@ -31,4 +37,16 @@ variable "instance_type" {
 variable "ami_name_pattern" {
   description = "AMI name pattern for the SSM jump host"
   type        = string
+}
+
+variable "s3_artifacts_bucket" {
+  description = "Optional S3 bucket name for offline artifacts accessible from jump host"
+  type        = string
+  default     = null
+}
+
+variable "s3_artifacts_prefix" {
+  description = "Optional S3 prefix (without leading slash) for offline artifacts"
+  type        = string
+  default     = null
 }

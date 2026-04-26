@@ -67,3 +67,8 @@ variable "node_max_unavailable_percentage" {
   description = "Max unavailable nodes during node group update"
   type        = number
 }
+
+variable "jump_host_role_arn" {
+  description = "IAM role ARN used by the support VPC jump host for EKS API auth"
+  type        = string
+}

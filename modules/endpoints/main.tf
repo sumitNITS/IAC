@@ -61,27 +61,21 @@ resource "aws_security_group" "support_endpoint_sg" {
   }
 }
 
-resource "aws_vpc_endpoint" "ssm" {
-  vpc_id              = var.support_vpc_id
-  service_name        = "com.amazonaws.${var.region}.ssm"
-  vpc_endpoint_type   = "Interface"
-  subnet_ids          = var.support_private_subnets
-  security_group_ids  = [aws_security_group.support_endpoint_sg.id]
-  private_dns_enabled = true
+locals {
+  support_interface_endpoints = [
+    "ssm",
+    "ssmmessages",
+    "ec2messages",
+    "eks",
+    "sts"
+  ]
 }
 
-resource "aws_vpc_endpoint" "ssmmessages" {
-  vpc_id              = var.support_vpc_id
-  service_name        = "com.amazonaws.${var.region}.ssmmessages"
-  vpc_endpoint_type   = "Interface"
-  subnet_ids          = var.support_private_subnets
-  security_group_ids  = [aws_security_group.support_endpoint_sg.id]
-  private_dns_enabled = true
-}
+resource "aws_vpc_endpoint" "support_interface" {
+  for_each = toset(local.support_interface_endpoints)
 
-resource "aws_vpc_endpoint" "ec2messages" {
   vpc_id              = var.support_vpc_id
-  service_name        = "com.amazonaws.${var.region}.ec2messages"
+  service_name        = "com.amazonaws.${var.region}.${each.key}"
   vpc_endpoint_type   = "Interface"
   subnet_ids          = var.support_private_subnets
   security_group_ids  = [aws_security_group.support_endpoint_sg.id]
@@ -95,6 +89,17 @@ resource "aws_vpc_endpoint" "s3" {
   route_table_ids   = var.private_route_tables
 }
 
+resource "aws_vpc_endpoint" "s3_support" {
+  vpc_id            = var.support_vpc_id
+  service_name      = "com.amazonaws.${var.region}.s3"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids   = var.support_private_route_tables
+
+  tags = {
+    Name = "${var.environment}-s3-support-endpoint"
+  }
+}
+
 locals {
   interface_endpoints = [
     "ecr.api",
@@ -103,13 +108,14 @@ locals {
     "sts",
     "ec2",
     "eks",
-    "elasticloadbalancing"
+    "elasticloadbalancing",
+    "autoscaling",
+    "monitoring"
   ]
 }
 
 resource "aws_vpc_endpoint" "interface" {
   for_each = toset(local.interface_endpoints)
-
   vpc_id              = var.vpc_id
   service_name        = "com.amazonaws.${var.region}.${each.key}"
   vpc_endpoint_type   = "Interface"

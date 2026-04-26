@@ -8,11 +8,6 @@ variable "vpc_id" {
   type        = string
 }
 
-variable "private_subnets" {
-  description = "List of private subnet IDs for interface endpoints"
-  type        = list(string)
-}
-
 variable "private_route_tables" {
   description = "List of private route table IDs for S3 gateway endpoint"
   type        = list(string)
@@ -48,7 +43,8 @@ variable "private_subnet_ids" {
   type        = list(string)
 }
 
-variable "private_route_table_ids" {
-  description = "Private route table IDs for S3 gateway endpoint"
+variable "support_private_route_tables" {
+  description = "List of private route table IDs in the support VPC for S3 gateway endpoint"
   type        = list(string)
+  default     = []
 }
