@@ -171,7 +171,6 @@ resource "aws_instance" "ssm" {
   user_data = <<-EOF
     #!/bin/bash
     set -e
-
     systemctl enable amazon-ssm-agent
     systemctl start amazon-ssm-agent
   EOF

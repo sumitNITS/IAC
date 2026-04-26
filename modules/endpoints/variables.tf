@@ -46,5 +46,4 @@ variable "private_subnet_ids" {
 variable "support_private_route_tables" {
   description = "List of private route table IDs in the support VPC for S3 gateway endpoint"
   type        = list(string)
-  default     = []
 }
