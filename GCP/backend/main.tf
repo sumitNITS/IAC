@@ -69,3 +69,19 @@ resource "google_service_account_iam_member" "terraform_sa_impersonation" {
   role               = "roles/iam.serviceAccountTokenCreator"
   member             = "user:${var.admin_email}"
 }
+
+# Grant the Terraform SA necessary project-level administrative permissions
+resource "google_project_iam_member" "terraform_sa_roles" {
+  for_each = toset([
+    "roles/editor",                          # Base resource management
+    "roles/resourcemanager.projectIamAdmin", # Allow SA to grant IAM roles (fixes "Policy update access denied")
+    "roles/cloudkms.admin",                  # Allow SA to manage KMS keys and IAM (fixes KMS 403 errors)
+    "roles/compute.networkAdmin",            # Allow SA to manage VPC peering for Cloud SQL
+    "roles/secretmanager.admin",             # Allow SA to manage and access DB secrets
+    "roles/servicenetworking.admin"          # Allow SA to manage Private Service Access connections (fixes Cloud SQL peering 403)
+  ])
+
+  project = var.project_id
+  role    = each.value
+  member  = "serviceAccount:${google_service_account.terraform_sa.email}"
+}
