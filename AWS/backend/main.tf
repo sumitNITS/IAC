@@ -11,7 +11,7 @@ provider "aws" {
 data "aws_caller_identity" "current" {}
 
 resource "aws_s3_bucket" "tf_state" {
-  bucket = "tf-state-files"
+  bucket = "bucket-name-for-tf-state" # Change this to a unique bucket name
 }
 
 resource "aws_s3_bucket_versioning" "versioning" {
@@ -143,7 +143,7 @@ resource "aws_s3_bucket_policy" "tf_state" {
 }
 
 resource "aws_dynamodb_table" "tf_lock" {
-  name                        = "tf-lock"
+  name                        = "tf-lock-for-state-locking" # Change this to a unique table name
   billing_mode                = "PAY_PER_REQUEST"
   hash_key                    = "LockID"
   deletion_protection_enabled = true

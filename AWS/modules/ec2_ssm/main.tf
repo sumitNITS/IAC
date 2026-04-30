@@ -146,6 +146,16 @@ data "aws_ami" "al2023" {
     name   = "name"
     values = [var.ami_name_pattern]
   }
+  
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+
+  filter {
+    name   = "root-device-type"
+    values = ["ebs"]
+  }
 }
 
 resource "aws_instance" "ssm" {
@@ -174,6 +184,10 @@ resource "aws_instance" "ssm" {
     systemctl enable amazon-ssm-agent
     systemctl start amazon-ssm-agent
   EOF
+
+  lifecycle {
+    ignore_changes = [ami]
+  }
 
   tags = {
     Name = "${var.environment}-ssm-jump-host"
