@@ -138,6 +138,11 @@ resource "google_container_cluster" "primary" {
   remove_default_node_pool = true
   initial_node_count       = 1
 
+  node_config {
+    disk_size_gb = 20
+    disk_type    = "pd-standard"
+  }
+
   # Secret encryption (same as EKS KMS encryption)
   database_encryption {
     state    = "ENCRYPTED"
