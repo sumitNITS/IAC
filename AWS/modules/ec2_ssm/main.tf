@@ -146,7 +146,7 @@ data "aws_ami" "al2023" {
     name   = "name"
     values = [var.ami_name_pattern]
   }
-  
+
   filter {
     name   = "virtualization-type"
     values = ["hvm"]

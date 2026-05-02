@@ -1,12 +1,12 @@
 module "vpc" {
   source = "../../modules/vpc"
 
-  environment        = var.environment
-  region             = var.region
-  cluster_vpc_cidr   = var.cluster_vpc_cidr
+  environment           = var.environment
+  region                = var.region
+  cluster_vpc_cidr      = var.cluster_vpc_cidr
   jump_host_subnet_cidr = var.jump_host_subnet_cidr
-  pod_range_cidr     = var.pod_range_cidr
-  service_range_cidr = var.service_range_cidr
+  pod_range_cidr        = var.pod_range_cidr
+  service_range_cidr    = var.service_range_cidr
 }
 
 module "gke" {

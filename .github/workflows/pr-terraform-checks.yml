@@ -1,0 +1,150 @@
+name: PR - Terraform Checks
+
+on:
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'AWS/**/*.tf'
+      - 'GCP/**/*.tf'
+
+env:
+  TFLINT_VERSION: "v0.50.0"
+
+jobs:
+  # JOB 1: Detect changed Terraform directories
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      all_dirs: ${{ steps.dirs.outputs.all_dirs }}
+      any_changed: ${{ steps.dirs.outputs.any_changed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find changed .tf directories
+        id: dirs
+        run: |
+          changed_files=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep '\.tf$' || true)
+
+          if [ -z "$changed_files" ]; then
+            echo "any_changed=false" >> "$GITHUB_OUTPUT"
+            echo 'all_dirs=["skip"]' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "any_changed=true" >> "$GITHUB_OUTPUT"
+
+          all_dirs=$(echo "$changed_files" | while read -r f; do dirname "$f"; done | sort -u | jq -R . | jq -s -c .)
+          echo "all_dirs=$all_dirs" >> "$GITHUB_OUTPUT"
+          echo "Changed dirs: $all_dirs"
+
+  # JOB 2: terraform fmt (fast, global)
+  terraform-fmt:
+    name: Terraform Format
+    runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.any_changed == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.5.7"
+
+      - name: Check formatting
+        run: terraform fmt -check -recursive -diff
+
+  # JOB 3: terraform validate (per changed dir)
+  terraform-validate:
+    name: Validate (${{ matrix.directory }})
+    runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.any_changed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        directory: ${{ fromJSON(needs.detect-changes.outputs.all_dirs) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.5.7"
+
+      - name: Validate
+        working-directory: ${{ matrix.directory }}
+        run: |
+          if ls *.tf 1> /dev/null 2>&1; then
+            terraform init -backend=false
+            terraform validate
+          else
+            echo "No .tf files, skipping."
+          fi
+
+  # JOB 4: TFLint (per changed dir, AWS + GCP plugins)
+  tflint:
+    name: TFLint (${{ matrix.directory }})
+    runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.any_changed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        directory: ${{ fromJSON(needs.detect-changes.outputs.all_dirs) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: ${{ env.TFLINT_VERSION }}
+
+      - name: Init TFLint plugins
+        run: tflint --init
+
+      - name: Run TFLint
+        working-directory: ${{ matrix.directory }}
+        run: |
+          if ls *.tf 1> /dev/null 2>&1; then
+            tflint --format compact --config "$GITHUB_WORKSPACE/.tflint.hcl"
+          else
+            echo "No .tf files, skipping."
+          fi
+
+  # JOB 5: Security Scanning (Checkov)
+  security-scan:
+    name: Security Scan (Checkov)
+    runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.any_changed == 'true'
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: .
+          framework: terraform
+          output_format: cli,sarif
+          output_file_path: console,checkov-results.sarif
+          download_external_modules: true
+          skip_check: "CKV_TF_1"
+
+      - name: Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: checkov-results.sarif

@@ -12,10 +12,6 @@ locals {
   mult = var.subnet_multiplier
 }
 
-data "aws_caller_identity" "current" {}
-
-data "aws_region" "current" {}
-
 resource "aws_vpc" "cluster" {
   cidr_block           = var.cluster_vpc_cidr
   enable_dns_support   = true

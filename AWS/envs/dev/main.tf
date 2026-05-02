@@ -1,5 +1,5 @@
 module "vpc" {
-  source = "../../modules/vpc"
+  source            = "../../modules/vpc"
   environment       = var.environment
   cluster_vpc_cidr  = var.cluster_vpc_cidr
   support_vpc_cidr  = var.support_vpc_cidr
@@ -8,11 +8,11 @@ module "vpc" {
 }
 
 module "vpc_peering" {
-  source = "../../modules/vpc_peering"
-  cluster_vpc_id   = module.vpc.cluster_vpc_id
-  support_vpc_id   = module.vpc.support_vpc_id
-  cluster_vpc_cidr = var.cluster_vpc_cidr
-  support_vpc_cidr = var.support_vpc_cidr
+  source                  = "../../modules/vpc_peering"
+  cluster_vpc_id          = module.vpc.cluster_vpc_id
+  support_vpc_id          = module.vpc.support_vpc_id
+  cluster_vpc_cidr        = var.cluster_vpc_cidr
+  support_vpc_cidr        = var.support_vpc_cidr
   cluster_route_table_ids = module.vpc.cluster_private_route_tables
   support_route_table_ids = module.vpc.support_private_route_tables
 }

@@ -115,7 +115,7 @@ locals {
 }
 
 resource "aws_vpc_endpoint" "interface" {
-  for_each = toset(local.interface_endpoints)
+  for_each            = toset(local.interface_endpoints)
   vpc_id              = var.vpc_id
   service_name        = "com.amazonaws.${var.region}.${each.key}"
   vpc_endpoint_type   = "Interface"
