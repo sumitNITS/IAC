@@ -1,0 +1,6 @@
+# AWS-0104 - terraform-aws-modules/eks/aws creates unrestricted egress for node groups by design
+# AWS-0164 - We have public subnets for EKS, but only for ALBs/NAT Gateways, not for EC2 instances
+
+AWS-0104
+AWS-0164
+

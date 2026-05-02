@@ -62,7 +62,7 @@ resource "google_kms_crypto_key_iam_member" "compute_encrypt_decrypt" {
   crypto_key_id = google_kms_crypto_key.gke_secrets.id
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
   # The Compute Engine Service Agent uses the format: service-[PROJECT_NUMBER]@compute-system.iam.gserviceaccount.com
-  member        = "serviceAccount:service-${data.google_project.project.number}@compute-system.iam.gserviceaccount.com"
+  member = "serviceAccount:service-${data.google_project.project.number}@compute-system.iam.gserviceaccount.com"
 }
 
 # GKE Node Service Account
@@ -208,9 +208,9 @@ resource "google_container_node_pool" "primary" {
   }
 
   node_config {
-    machine_type = var.node_machine_type
-    disk_size_gb = var.node_disk_size_gb
-    disk_type    = var.node_disk_type
+    machine_type      = var.node_machine_type
+    disk_size_gb      = var.node_disk_size_gb
+    disk_type         = var.node_disk_type
     boot_disk_kms_key = google_kms_crypto_key.gke_secrets.id
 
     service_account = google_service_account.gke_nodes.email
