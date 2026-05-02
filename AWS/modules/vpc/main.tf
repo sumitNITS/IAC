@@ -18,6 +18,7 @@ resource "aws_vpc" "cluster" {
   enable_dns_hostnames = true
 }
 
+#trivy:ignore:AWS-0164 -- Public subnets are by design; only ALBs/NAT Gateways use them.
 resource "aws_subnet" "public" {
   count                   = length(var.azs) * local.mult
   vpc_id                  = aws_vpc.cluster.id
