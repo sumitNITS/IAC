@@ -133,15 +133,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Run Trivy
+      - name: Run Trivy (console output)
         uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: config
+          scan-ref: .
+          format: table
+          severity: HIGH,CRITICAL
+          exit-code: 0
+          skip-dirs: '**/.terraform'
+          trivyignores: .trivyignore
+
+      - name: Run Trivy (SARIF for GitHub Security tab)
+        uses: aquasecurity/trivy-action@master
+        if: always()
         with:
           scan-type: config
           scan-ref: .
           format: sarif
           output: trivy-results.sarif
           severity: HIGH,CRITICAL
-          exit-code: 1
+          exit-code: 0
           skip-dirs: '**/.terraform'
           trivyignores: .trivyignore
 

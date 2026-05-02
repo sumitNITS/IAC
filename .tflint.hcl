@@ -9,13 +9,13 @@ plugin "terraform" {
 
 plugin "aws" {
   enabled = true
-  version = "~> 0.30"
+  version = "0.47.0"
   source  = "github.com/terraform-linters/tflint-ruleset-aws"
 }
 
 plugin "google" {
   enabled = true
-  version = "~> 0.27"
+  version = "0.38.0"
   source  = "github.com/terraform-linters/tflint-ruleset-google"
 }
 
