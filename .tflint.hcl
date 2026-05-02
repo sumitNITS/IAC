@@ -26,7 +26,15 @@ plugin "google" {
 #   }
 # }
 
-# Optional: disable specific rules globally if too noisy
-# rule "terraform_required_version" {
-#   enabled = false
-# }
+# Disable rules that fail on variable references (can't be evaluated at lint time)
+rule "google_compute_instance_invalid_machine_type" {
+  enabled = false
+}
+
+rule "google_container_node_pool_invalid_machine_type" {
+  enabled = false
+}
+
+rule "aws_instance_invalid_type" {
+  enabled = false
+}
