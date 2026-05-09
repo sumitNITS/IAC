@@ -79,3 +79,35 @@ resource "google_compute_firewall" "jump_host_allow_internal" {
   source_ranges = [var.jump_host_subnet_cidr]
   target_tags   = ["${var.environment}-jump-host"]
 }
+
+# ---------------------------------------------------------------------------
+# Cloud Router + NAT — scoped ONLY to the jump host subnet
+# This gives the jump host outbound internet access (for tools, updates)
+# while keeping the GKE node and DB subnets completely air-gapped.
+# ---------------------------------------------------------------------------
+resource "google_compute_router" "jump_host" {
+  count   = var.enable_jump_host_nat ? 1 : 0
+  name    = "${var.environment}-jump-host-router"
+  region  = var.region
+  network = google_compute_network.cluster.id
+}
+
+resource "google_compute_router_nat" "jump_host" {
+  count  = var.enable_jump_host_nat ? 1 : 0
+  name   = "${var.environment}-jump-host-nat"
+  router = google_compute_router.jump_host[0].name
+  region = var.region
+
+  nat_ip_allocate_option             = "AUTO_ONLY"
+  source_subnetwork_ip_ranges_to_nat = "LIST_OF_SUBNETWORKS"
+
+  subnetwork {
+    name                    = google_compute_subnetwork.jump_host.id
+    source_ip_ranges_to_nat = ["ALL_IP_RANGES"]
+  }
+
+  log_config {
+    enable = true
+    filter = "ERRORS_ONLY"
+  }
+}

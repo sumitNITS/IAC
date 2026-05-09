@@ -157,6 +157,9 @@ resource "google_container_cluster" "primary" {
   # Enable Dataplane V2 for eBPF-based networking and security
   datapath_provider = "ADVANCED_DATAPATH"
 
+  # Cilium ClusterWide Network Policies (cluster-scoped, namespace-agnostic)
+  enable_cilium_clusterwide_network_policy = var.enable_cilium_clusterwide_network_policy
+
   # Logging and monitoring
   logging_config {
     enable_components = ["SYSTEM_COMPONENTS", "WORKLOADS", "APISERVER", "CONTROLLER_MANAGER", "SCHEDULER"]
@@ -191,6 +194,10 @@ resource "google_container_node_pool" "primary" {
   name     = "${var.environment}-node-pool"
   location = var.region
   cluster  = google_container_cluster.primary.name
+
+  # Explicit initial count ensures nodes are created immediately.
+  # For regional/multi-zonal pools, this is the count PER ZONE.
+  initial_node_count = var.node_min_size
 
   autoscaling {
     min_node_count = var.node_min_size

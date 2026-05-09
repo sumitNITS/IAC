@@ -82,3 +82,8 @@ variable "deletion_protection" {
   description = "Enable deletion protection for the GKE cluster"
   type        = bool
 }
+
+variable "enable_cilium_clusterwide_network_policy" {
+  description = "Enable Cilium ClusterWide Network Policy (requires Dataplane V2). Allows cluster-scoped network policies via CiliumClusterwideNetworkPolicy CRD."
+  type        = bool
+}

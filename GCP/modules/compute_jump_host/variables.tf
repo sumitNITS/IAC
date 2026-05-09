@@ -62,3 +62,8 @@ variable "enable_os_login_project_binding" {
   description = "Enable OS Login IAM binding for the admin user at the project level"
   type        = bool
 }
+
+variable "enable_restricted_egress" {
+  description = "Restrict jump host outbound traffic to HTTPS (443) and DNS (53) only"
+  type        = bool
+}
