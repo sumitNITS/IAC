@@ -27,3 +27,8 @@ variable "service_range_cidr" {
   description = "Secondary CIDR for GKE services (must not overlap with cluster_vpc_cidr or pod_range_cidr)"
   type        = string
 }
+
+variable "enable_jump_host_nat" {
+  description = "Enable Cloud NAT for the jump host subnet to allow outbound internet access"
+  type        = bool
+}

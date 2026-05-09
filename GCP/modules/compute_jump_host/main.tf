@@ -125,3 +125,31 @@ resource "google_project_iam_member" "os_login_admin" {
   role    = "roles/compute.osAdminLogin"
   member  = "user:${var.admin_email}"
 }
+
+# ---------------------------------------------------------------------------
+# Optional: Restrict jump host outbound to HTTPS and DNS only
+# This is a defense-in-depth measure. Even with Cloud NAT, the jump host
+# can only reach the internet on TCP/443 and UDP/TCP 53.
+# ---------------------------------------------------------------------------
+resource "google_compute_firewall" "jump_host_restricted_egress" {
+  count = var.enable_restricted_egress ? 1 : 0
+
+  name        = "${var.environment}-jump-host-restricted-egress"
+  network     = var.vpc_name
+  description = "Restrict jump host outbound to HTTPS and DNS only"
+  direction   = "EGRESS"
+  priority    = 1000
+
+  allow {
+    protocol = "tcp"
+    ports    = ["443", "53"]
+  }
+
+  allow {
+    protocol = "udp"
+    ports    = ["53"]
+  }
+
+  target_tags        = ["${var.environment}-jump-host"]
+  destination_ranges = ["0.0.0.0/0"]
+}

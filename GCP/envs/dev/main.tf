@@ -7,28 +7,30 @@ module "vpc" {
   jump_host_subnet_cidr = var.jump_host_subnet_cidr
   pod_range_cidr        = var.pod_range_cidr
   service_range_cidr    = var.service_range_cidr
+  enable_jump_host_nat  = var.enable_jump_host_nat
 }
 
 module "gke" {
   source = "../../modules/gke"
 
-  environment            = var.environment
-  project_id             = var.project_id
-  region                 = var.region
-  vpc_name               = module.vpc.cluster_vpc_name
-  private_subnet_name    = module.vpc.cluster_private_subnet_id
-  jump_host_subnet_cidr  = var.jump_host_subnet_cidr
-  pod_range_name         = module.vpc.cluster_private_secondary_range_name
-  service_range_name     = module.vpc.cluster_services_secondary_range_name
-  pod_range_cidr         = var.pod_range_cidr
-  master_ipv4_cidr_block = var.master_ipv4_cidr_block
-  node_machine_type      = var.node_machine_type
-  node_disk_size_gb      = var.node_disk_size_gb
-  node_disk_type         = var.node_disk_type
-  node_min_size          = var.node_min_size
-  node_max_size          = var.node_max_size
-  node_locations         = var.node_locations
-  deletion_protection    = var.gke_deletion_protection
+  environment                              = var.environment
+  project_id                               = var.project_id
+  region                                   = var.region
+  vpc_name                                 = module.vpc.cluster_vpc_name
+  private_subnet_name                      = module.vpc.cluster_private_subnet_id
+  jump_host_subnet_cidr                    = var.jump_host_subnet_cidr
+  pod_range_name                           = module.vpc.cluster_private_secondary_range_name
+  service_range_name                       = module.vpc.cluster_services_secondary_range_name
+  pod_range_cidr                           = var.pod_range_cidr
+  master_ipv4_cidr_block                   = var.master_ipv4_cidr_block
+  node_machine_type                        = var.node_machine_type
+  node_disk_size_gb                        = var.node_disk_size_gb
+  node_disk_type                           = var.node_disk_type
+  node_min_size                            = var.node_min_size
+  node_max_size                            = var.node_max_size
+  node_locations                           = var.node_locations
+  deletion_protection                      = var.gke_deletion_protection
+  enable_cilium_clusterwide_network_policy = var.enable_cilium_clusterwide_network_policy
 }
 
 module "compute_jump_host" {
@@ -46,5 +48,6 @@ module "compute_jump_host" {
   deletion_protection             = var.jump_host_deletion_protection
   admin_email                     = var.admin_email
   enable_os_login_project_binding = var.enable_os_login_project_binding
+  enable_restricted_egress        = var.enable_restricted_jump_host_egress
   kms_key_id                      = var.kms_key_id
 }
