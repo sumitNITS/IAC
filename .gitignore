@@ -1,5 +1,6 @@
 # Local .terraform directories
 .terraform/
+.terraform.lock.hcl
 
 # .tfstate files
 *.tfstate
@@ -23,6 +24,16 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 
+# Plan files (can contain sensitive resource data)
+*.tfplan
+*.tfplan.*
+
+# Backend config files (contain bucket names / project IDs)
+backend.hcl
+
+# Txt plan files (can contain sensitive resource data)
+*.txt
+
 # Ignore transient lock info files created by terraform apply
 .terraform.tfstate.lock.info
 
@@ -30,4 +41,5 @@ override.tf.json
 .terraformrc
 terraform.rc
 
+# macOS
 .DS_Store
