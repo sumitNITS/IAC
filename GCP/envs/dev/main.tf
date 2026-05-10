@@ -51,3 +51,26 @@ module "compute_jump_host" {
   enable_restricted_egress        = var.enable_restricted_jump_host_egress
   kms_key_id                      = var.kms_key_id
 }
+
+module "cloud_sql" {
+  source = "../../modules/cloud_sql"
+  count  = var.create_database ? 1 : 0
+
+  environment                          = var.environment
+  project_id                           = var.project_id
+  region                               = var.region
+  vpc_id                               = module.vpc.cluster_vpc_id
+  private_service_access_address       = var.private_service_access_address
+  private_service_access_prefix_length = var.private_service_access_prefix_length
+  db_tier                              = var.db_tier
+  db_name                              = var.db_name
+  db_username                          = var.db_username
+  disk_size                            = var.db_disk_size
+  disk_type                            = var.db_disk_type
+  disk_autoresize                      = var.db_disk_autoresize
+  availability_type                    = var.db_availability_type
+  backup_enabled                       = var.db_backup_enabled
+  backup_start_time                    = var.db_backup_start_time
+  backup_retention_count               = var.db_backup_retention_count
+  deletion_protection                  = var.cloud_sql_deletion_protection
+}

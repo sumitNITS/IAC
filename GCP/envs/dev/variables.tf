@@ -131,3 +131,74 @@ variable "enable_restricted_jump_host_egress" {
   description = "Restrict jump host outbound traffic to HTTPS (443) and DNS (53) only"
   type        = bool
 }
+
+# Cloud SQL
+variable "db_tier" {
+  description = "Cloud SQL machine tier"
+  type        = string
+}
+
+variable "db_name" {
+  description = "Name of the application database"
+  type        = string
+}
+
+variable "db_username" {
+  description = "Admin username for Cloud SQL"
+  type        = string
+}
+
+variable "db_disk_size" {
+  description = "Initial disk size for Cloud SQL in GB"
+  type        = number
+}
+
+variable "db_disk_type" {
+  description = "Disk type for Cloud SQL"
+  type        = string
+}
+
+variable "db_disk_autoresize" {
+  description = "Enable Cloud SQL disk autoresize"
+  type        = bool
+}
+
+variable "db_availability_type" {
+  description = "Cloud SQL availability type"
+  type        = string
+}
+
+variable "db_backup_enabled" {
+  description = "Enable automated backups for Cloud SQL"
+  type        = bool
+}
+
+variable "db_backup_start_time" {
+  description = "UTC backup start time for Cloud SQL"
+  type        = string
+}
+
+variable "db_backup_retention_count" {
+  description = "Number of Cloud SQL backups to retain"
+  type        = number
+}
+
+variable "cloud_sql_deletion_protection" {
+  description = "Enable deletion protection for Cloud SQL"
+  type        = bool
+}
+
+variable "create_database" {
+  description = "Whether to create the Cloud SQL database module. Set to false to safely delete the database after the full environment is created."
+  type        = bool
+}
+
+variable "private_service_access_address" {
+  description = "Base address of the dedicated private services access range for Cloud SQL"
+  type        = string
+}
+
+variable "private_service_access_prefix_length" {
+  description = "Prefix length of the dedicated private services access range for Cloud SQL"
+  type        = number
+}

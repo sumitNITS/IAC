@@ -61,6 +61,32 @@ output "gke_workload_identity_pool" {
   value       = module.gke.workload_identity_pool
 }
 
+# Cloud SQL Outputs
+output "cloud_sql_instance_name" {
+  description = "Name of the Cloud SQL instance"
+  value       = var.create_database ? module.cloud_sql[0].instance_name : null
+}
+
+output "cloud_sql_connection_name" {
+  description = "Connection name of the Cloud SQL instance"
+  value       = var.create_database ? module.cloud_sql[0].instance_connection_name : null
+}
+
+output "cloud_sql_private_ip" {
+  description = "Private IP address of the Cloud SQL instance"
+  value       = var.create_database ? module.cloud_sql[0].private_ip_address : null
+}
+
+output "cloud_sql_database_name" {
+  description = "Name of the application database"
+  value       = var.create_database ? module.cloud_sql[0].database_name : null
+}
+
+output "cloud_sql_password_secret_id" {
+  description = "Secret Manager secret containing the Cloud SQL password"
+  value       = var.create_database ? module.cloud_sql[0].secret_id : null
+}
+
 # Quick Reference Commands
 output "kubectl_config_command" {
   description = "Command to get credentials for the GKE cluster"
