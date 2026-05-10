@@ -18,8 +18,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GOOGLE_AI_STUDIO.GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
 
-          config.model: "gemini/gemini-2.5-pro"
+          config.model: "gemini/gemini-1.5-flash"
+          config.fallback_models: '["gpt-4o-mini"]'
 
           pr_reviewer.extra_instructions: |
             You are a senior DevOps engineer.
