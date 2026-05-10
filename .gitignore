@@ -33,6 +33,7 @@ backend.hcl
 
 # Txt plan files (can contain sensitive resource data)
 *.txt
+*.txtplan
 
 # Ignore transient lock info files created by terraform apply
 .terraform.tfstate.lock.info
