@@ -114,7 +114,7 @@ resource "google_container_cluster" "primary" {
       enabled = true
     }
     gce_persistent_disk_csi_driver_config {
-      enabled =  true
+      enabled = true
     }
   }
   # Release channel (Regular = tested, stable Kubernetes versions)
@@ -205,7 +205,7 @@ resource "google_container_cluster" "primary" {
       initial_node_count,
     ]
   }
-  
+
   depends_on = [google_kms_crypto_key_iam_member.gke_encrypt_decrypt]
 }
 
