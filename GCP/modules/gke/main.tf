@@ -103,6 +103,20 @@ resource "google_container_cluster" "primary" {
   network    = var.vpc_name
   subnetwork = var.private_subnet_name
 
+  addons_config {
+    http_load_balancing {
+      disabled = false
+    }
+    horizontal_pod_autoscaling {
+      disabled = false
+    }
+    dns_cache_config {
+      enabled = true
+    }
+    gce_persistent_disk_csi_driver_config {
+      enabled =  true
+    }
+  }
   # Release channel (Regular = tested, stable Kubernetes versions)
   release_channel {
     channel = "REGULAR"
@@ -184,6 +198,14 @@ resource "google_container_cluster" "primary" {
 
   deletion_protection = var.deletion_protection
 
+  lifecycle {
+    ignore_changes = [
+      node_config,
+      node_pool,
+      initial_node_count,
+    ]
+  }
+  
   depends_on = [google_kms_crypto_key_iam_member.gke_encrypt_decrypt]
 }
 
@@ -262,9 +284,11 @@ resource "google_container_node_pool" "primary" {
 
 # Firewall Rules for GKE
 # GKE auto-creates node-to-node and master-to-node rules, but we add explicit
-# ones here for visibility and to avoid relying solely on GKE-managed rules.
+# ones here for visibility. Egress is controlled at the POD level via Cilium
+# NetworkPolicy — not at the node level. Node-level firewall only handles
+# ingress (control plane, LB health checks, DNS) and trusts outbound.
 
-# 1. GKE control plane -> nodes (kubelet + API webhook callbacks)
+# GKE control plane -> nodes (kubelet + API webhook callbacks)
 resource "google_compute_firewall" "allow_gke_master" {
   name        = "${var.environment}-allow-gke-master"
   network     = var.vpc_name
@@ -280,7 +304,7 @@ resource "google_compute_firewall" "allow_gke_master" {
   target_tags   = ["${var.environment}-gke-node"]
 }
 
-# 2. GCP Load Balancer health checks -> nodes (NodePort / Ingress health checks)
+# GCP Load Balancer health checks -> nodes (NodePort / Ingress health checks)
 resource "google_compute_firewall" "allow_gke_health_checks" {
   name        = "${var.environment}-allow-gke-health-checks"
   network     = var.vpc_name
@@ -300,7 +324,7 @@ resource "google_compute_firewall" "allow_gke_health_checks" {
   target_tags = ["${var.environment}-gke-node"]
 }
 
-# 3. DNS (CoreDNS) — pod range to nodes UDP/TCP 53
+# DNS (CoreDNS) — pod range to nodes UDP/TCP 53
 # Pod-to-pod traffic is handled by GKE CNI auto-rules, but CoreDNS runs on
 # nodes and needs explicit access from the pod IP range.
 resource "google_compute_firewall" "allow_gke_dns" {
