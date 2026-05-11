@@ -80,11 +80,36 @@ resource "google_compute_firewall" "jump_host_allow_internal" {
   target_tags   = ["${var.environment}-jump-host"]
 }
 
-# ---------------------------------------------------------------------------
-# Cloud Router + NAT — scoped ONLY to the jump host subnet
-# This gives the jump host outbound internet access (for tools, updates)
-# while keeping the GKE node and DB subnets completely air-gapped.
-# ---------------------------------------------------------------------------
+# Cloud Router & NAT — for GKE nodes (required for GCE Ingress controller)
+resource "google_compute_router" "gke" {
+  name    = "${var.environment}-gke-router"
+  region  = var.region
+  network = google_compute_network.cluster.id
+}
+
+resource "google_compute_router_nat" "gke" {
+  name   = "${var.environment}-gke-nat"
+  router = google_compute_router.gke.name
+  region = var.region
+
+  nat_ip_allocate_option             = "AUTO_ONLY"
+  source_subnetwork_ip_ranges_to_nat = "LIST_OF_SUBNETWORKS"
+
+  subnetwork {
+    name                    = google_compute_subnetwork.private.id
+    source_ip_ranges_to_nat = ["ALL_IP_RANGES"]
+  }
+
+  log_config {
+    enable = true
+    filter = "ERRORS_ONLY"
+  }
+}
+
+# Cloud Router & NAT — scoped ONLY to the jump host subnet
+# This gives the jump host outbound internet access (for tools, updates).
+# GKE nodes have their own restricted NAT (HTTPS/DNS only); Cloud SQL
+# remains fully private with no internet access.
 resource "google_compute_router" "jump_host" {
   count   = var.enable_jump_host_nat ? 1 : 0
   name    = "${var.environment}-jump-host-router"
