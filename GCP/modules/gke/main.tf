@@ -203,6 +203,8 @@ resource "google_container_cluster" "primary" {
       node_config,
       node_pool,
       initial_node_count,
+      database_encryption,
+      monitoring_config,
     ]
   }
 
