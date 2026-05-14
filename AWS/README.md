@@ -1,6 +1,6 @@
-# AWS Development Environment Configuration
+# AWS Cloud Infrastructure
 
-This directory contains the Terraform configuration to provision a secure, highly available, private-first AWS infrastructure for the **dev** environment.
+This directory contains the Terraform configuration to provision a secure, highly available, private-first AWS infrastructure for containerised workloads.
 
 ## Architecture Overview
 

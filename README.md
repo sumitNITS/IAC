@@ -18,6 +18,7 @@ The repository is logically divided into cloud-specific deployments and reusable
 ### ☁️ AWS Configurations
 
 AWS deployments are managed through root configurations and shared modules:
+- **`AWS/backend/`**: Bootstrap configurations for robust Terraform state management (S3 Buckets, DynamoDB state locking).
 - **`AWS/envs/`**: Environment-specific root modules (e.g., `AWS/envs/dev/` containing architecture diagrams and deployment instructions).
 - **`AWS/modules/`**: Reusable AWS Terraform modules:
   - `vpc`: Configures Cluster and Support VPCs with explicit 3-tier subnets (Public, Private, DB).
@@ -30,7 +31,12 @@ AWS deployments are managed through root configurations and shared modules:
 
 Google Cloud resources are securely isolated in their own directory:
 - **`GCP/backend/`**: Bootstrap configurations for robust Terraform state management (GCS Buckets, Service Account impersonation).
-- **`GCP/modules/`**: Reusable GCP Terraform modules (e.g., `gke` featuring Dataplane V2 and Shielded VMs).
+- **`GCP/envs/`**: Environment-specific root modules (e.g., `GCP/envs/dev/` containing architecture configurations and deployment instructions).
+- **`GCP/modules/`**: Reusable GCP Terraform modules:
+  - `vpc`: Configures the Cluster VPC with explicit subnets, VPC Flow Logs, and Cloud NAT.
+  - `gke`: Provisions a private-first GKE cluster featuring Dataplane V2, Shielded VMs, and Workload Identity.
+  - `compute_jump_host`: Provisions a secure Compute Engine Jump Host accessed via Identity-Aware Proxy (IAP).
+  - `cloud_sql`: Provisions a private Cloud SQL PostgreSQL instance using Private Service Access.
 
 ## Prerequisites
 
