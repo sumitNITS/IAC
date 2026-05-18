@@ -10,14 +10,26 @@
 #
 # After applying this, ArgoCD will show a "Login via Google" button.
 # Run this command AFTER creating your OAuth credentials:
-#
 #   kubectl patch secret argocd-secret -n argocd --type=merge -p '{
 #     "stringData": {
 #       "oidc.google.clientId": "YOUR_GOOGLE_OAUTH_CLIENT_ID",
 #       "oidc.google.clientSecret": "YOUR_GOOGLE_OAUTH_CLIENT_SECRET"
 #     }
 #   }'
-#
+# Then, update the argocd-cm ConfigMap to set the OIDC issuer URL and client info:
+# oidc.config: |
+#   name: Google
+#   issuer: https://accounts.google.com
+#   clientID: \$argocd-secret:oidc.google.clientId
+#   clientSecret: \$argocd-secret:oidc.google.clientSecret
+#   requestedScopes: ["openid", "profile", "email"]
+#   requestedIDTokenClaims:
+#     email:
+#       required: true
+#     email_verified:
+#       required: true
+# 
+# After making these changes, apply the updated argocd-cm and argocd-secret, then
 # Then restart the ArgoCD server using: 
 # kubectl rollout restart deployment argocd-server -n argocd
 
