@@ -1,0 +1,71 @@
+# ArgoCD GCE Ingress with Google-Managed SSL
+# This manifest exposes ArgoCD securely to the internet using:
+#   - GCE Ingress (Google-managed HTTPS Load Balancer)
+#   - Google-Managed SSL Certificate
+#
+# Prerequisites:
+#   1. ArgoCD is installed
+#   2. A static global IP address reserved in GCP (argocd-ip in this example)
+#   3. DNS A-record points to the Ingress IP (get it after creation: kubectl get ingress)
+#
+# IMPORTANT: ArgoCD server runs with "insecure: true" because SSL is terminated
+# at the Google Load Balancer. The LB -> Pod traffic stays inside the VPC.
+
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: argocd-ssl-cert
+  namespace: argocd
+spec:
+  domains:
+    - argocd.example.com
+---
+apiVersion: networking.gke.io/v1beta1
+kind: FrontendConfig
+metadata:
+  name: argocd-frontend-config
+  namespace: argocd
+spec:
+  redirectToHttps:
+    enabled: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: argocd-server-external
+  namespace: argocd
+  annotations:
+    cloud.google.com/neg: '{"ingress": true}'
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: argocd-server
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+      protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd-ingress
+  namespace: argocd
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+    kubernetes.io/ingress.global-static-ip-name: argocd-ip
+    networking.gke.io/managed-certificates: argocd-ssl-cert
+    networking.gke.io/v1beta1.FrontendConfig: argocd-frontend-config
+spec:
+  ingressClassName: gce
+  rules:
+    - host: argocd.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: argocd-server-external
+                port:
+                  number: 80
