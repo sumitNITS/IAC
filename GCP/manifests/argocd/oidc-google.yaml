@@ -1,0 +1,56 @@
+# ArgoCD OIDC Integration with Google OAuth 2.0
+# This manifest configures RBAC policy for ArgoCD OIDC users.
+# The OAuth credentials themselves must be stored in the argocd-secret
+#
+# Prerequisites:
+#   1. GCP OAuth 2.0 Client ID created
+#      Application type: Web application
+#      Redirect URI: https://argocd.example.com/auth/callback
+#   2. ArgoCD is installed and Ingress is set up (see ingress.yaml)
+#
+# After applying this, ArgoCD will show a "Login via Google" button.
+# Run this command AFTER creating your OAuth credentials:
+#   kubectl patch secret argocd-secret -n argocd --type=merge -p '{
+#     "stringData": {
+#       "oidc.google.clientId": "YOUR_GOOGLE_OAUTH_CLIENT_ID",
+#       "oidc.google.clientSecret": "YOUR_GOOGLE_OAUTH_CLIENT_SECRET"
+#     }
+#   }'
+# Then, update the argocd-cm ConfigMap to set the OIDC issuer URL and client info:
+# oidc.config: |
+#   name: Google
+#   issuer: https://accounts.google.com
+#   clientID: \$argocd-secret:oidc.google.clientId
+#   clientSecret: \$argocd-secret:oidc.google.clientSecret
+#   requestedScopes: ["openid", "profile", "email"]
+#   requestedIDTokenClaims:
+#     email:
+#       required: true
+#     email_verified:
+#       required: true
+# 
+# After making these changes, apply the updated argocd-cm and argocd-secret, then
+# Then restart the ArgoCD server using: 
+# kubectl rollout restart deployment argocd-server -n argocd
+
+# Configure RBAC to restrict admin access to specific Google users
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-rbac-cm
+  namespace: argocd
+data:
+  policy.default: role:readonly
+  policy.csv: |
+    p, role:org-admin, applications, *, */*, allow
+    p, role:org-admin, clusters, get, *, allow
+    p, role:org-admin, repositories, *, *, allow
+    p, role:org-admin, projects, *, *, allow
+    # Grant org-admin to specific Google user identities.
+    # IMPORTANT: ArgoCD v2.11.6 native OIDC uses the Google 'sub' claim for
+    # RBAC — NOT the email. Find a user's sub ID in the argocd-server logs:
+    #   kubectl logs -n argocd deployment/argocd-server | grep '"sub"'
+    g, <sub-id-1>, role:org-admin
+    # NOTE: Any user whose sub ID is NOT listed above automatically gets
+    # role:readonly because of policy.default. No explicit entry needed.
